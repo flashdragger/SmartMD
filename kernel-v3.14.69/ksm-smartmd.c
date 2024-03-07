@@ -23,6 +23,7 @@
 #include <linux/rmap.h>
 #include <linux/spinlock.h>
 #include <linux/jhash.h>
+#include <linux/blake3.h>
 #include <linux/delay.h>
 #include <linux/kthread.h>
 #include <linux/wait.h>
@@ -922,7 +923,11 @@ static u32 calc_checksum(struct page *page)
 {
 	u32 checksum;
 	void *addr = kmap_atomic(page);
-	checksum = jhash(addr, PAGE_SIZE, 17);
+	// checksum = jhash(addr, PAGE_SIZE, 17);
+	blake3_hasher hasher;
+	blake3_hasher_init(&hasher);
+	blake3_hasher_update(&hasher, addr, PAGE_SIZE);
+	blake3_hasher_finalize(&hasher, &checksum, sizeof(checksum));
 	kunmap_atomic(addr);
 	return checksum;
 }
